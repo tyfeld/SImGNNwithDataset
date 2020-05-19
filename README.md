@@ -1,6 +1,12 @@
 # SImGNNwithDataset
-SimGNN from  and add AIDS data from  
-To run without changing default param.parser.py :
+SimGNN from  https://github.com/benedekrozemberczki/SimGNN 
+and add AIDS data from  https://github.com/yjwtheonly/SimGNN
+
+
+Download the test_data.pickle to dataset/ 
+
+
+To run  :
 ```
-python src/main.py --training-graphs './dataset/train_data.pickle' --testing-graphs './dataset/test_data.pickle'
+python src/main.py 
 ```
