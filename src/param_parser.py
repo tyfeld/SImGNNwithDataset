@@ -11,12 +11,12 @@ def parameter_parser():
 
     parser.add_argument("--training-graphs",
                         nargs="?",
-                        default="./dataset/train/",
+                        default="./dataset/train_data.pickle",
 	                help="Folder with training graph pair jsons.")
 
     parser.add_argument("--testing-graphs",
                         nargs="?",
-                        default="./dataset/test/",
+                        default="./dataset/test_data.pickle",
 	                help="Folder with testing graph pair jsons.")
 
     parser.add_argument("--epochs",
