@@ -8,6 +8,7 @@ import numpy as np
 from tqdm import tqdm, trange
 from torch_geometric.nn import GCNConv
 from layers import AttentionModule, TenorNetworkModule
+from layers1 import Att, NTN
 from utils import process_pair, calculate_loss, calculate_normalized_ged
 
 class SimGNN(torch.nn.Module):
@@ -42,8 +43,10 @@ class SimGNN(torch.nn.Module):
         self.convolution_1 = GCNConv(self.number_labels, self.args.filters_1)
         self.convolution_2 = GCNConv(self.args.filters_1, self.args.filters_2)
         self.convolution_3 = GCNConv(self.args.filters_2, self.args.filters_3)
-        self.attention = AttentionModule(self.args)
-        self.tensor_network = TenorNetworkModule(self.args)
+        #self.attention = AttentionModule(self.args)
+        self.attention = Att()
+        #self.tensor_network = TenorNetworkModule(self.args)
+        self.tensor_network = NTN()
         self.fully_connected_first = torch.nn.Linear(self.feature_count,
                                                      self.args.bottle_neck_neurons)
         self.scoring_layer = torch.nn.Linear(self.args.bottle_neck_neurons, 1)
