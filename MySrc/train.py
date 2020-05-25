@@ -25,8 +25,8 @@ class Trainer(object):
         self.record = [] #用来记录(train_loss, val_loss)
         
         """载入数据并划分出 验证集"""
-        self.training_graphs = pickle.load(open("./dataset/train_data50.pickle",'rb'))
-        self.testing_graphs = pickle.load(open("./dataset/test_data50.pickle",'rb'))
+        self.training_graphs = pickle.load(open("./dataset/train_data.pickle",'rb'))
+        self.testing_graphs = pickle.load(open("./dataset/test_data.pickle",'rb'))
         random.shuffle(self.training_graphs)
         L = len(self.training_graphs)
         div = int((1 - val) * L)
