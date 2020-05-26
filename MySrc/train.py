@@ -27,8 +27,8 @@ class Trainer(object):
         
         """载入数据并划分出 验证集"""
         print("\nEnumerating unique labels.\n")
-        self.training_graphs = pickle.load(open("./dataset/train_data50.pickle",'rb'))
-        self.testing_graphs = pickle.load(open("./dataset/test_data50.pickle",'rb'))
+        self.training_graphs = pickle.load(open("./dataset/train_data.pickle",'rb'))
+        self.testing_graphs = pickle.load(open("./dataset/test_data.pickle",'rb'))
         random.shuffle(self.training_graphs)
         L = len(self.training_graphs)
         div = int((1 - val) * L)
