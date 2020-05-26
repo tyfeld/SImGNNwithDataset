@@ -8,5 +8,5 @@ Download the test_data.pickle to dataset/
 
 To run  :
 ```
-python src/main.py 
+python MySrc/main.py 
 ```
