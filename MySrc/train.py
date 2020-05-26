@@ -8,6 +8,7 @@ import glob
 import torch
 import pickle
 import random
+import math
 import numpy as np
 from tqdm import tqdm, trange
 from model import Att, NTN, FC, SimGNN
@@ -25,8 +26,9 @@ class Trainer(object):
         self.record = [] #用来记录(train_loss, val_loss)
         
         """载入数据并划分出 验证集"""
-        self.training_graphs = pickle.load(open("./dataset/train_data.pickle",'rb'))
-        self.testing_graphs = pickle.load(open("./dataset/test_data.pickle",'rb'))
+        print("\nEnumerating unique labels.\n")
+        self.training_graphs = pickle.load(open("./dataset/train_data50.pickle",'rb'))
+        self.testing_graphs = pickle.load(open("./dataset/test_data50.pickle",'rb'))
         random.shuffle(self.training_graphs)
         L = len(self.training_graphs)
         div = int((1 - val) * L)
@@ -51,6 +53,9 @@ class Trainer(object):
         
     def save_model(self, file):
         torch.save(self.model, file)
+
+    def save_record(self,fliename):
+        pickle.dump(self.record,open(fliename,'wb'))
         
     """将读入的文件转化成网络能接受的形式"""
     def transfer_to_torch(self, data):
@@ -90,7 +95,8 @@ class Trainer(object):
         for data in batch:
             data = self.transfer_to_torch(data)
             prediction = self.model(data)
-            losses = losses + torch.nn.functional.mse_loss(data["target"], prediction[0])
+            tmp = torch.nn.functional.mse_loss(data["target"], prediction[0])
+            losses = losses + tmp
         losses.backward(retain_graph=True)
         self.optimizer.step()
         loss = losses.item()
@@ -112,7 +118,8 @@ class Trainer(object):
         for index, batch in tqdm(enumerate(batches), total=len(batches)):
             loss_score = self.process_batch(batch)
             L = L + len(batch)
-            loss_sum = loss_sum + loss_score * len(batch)
+            #loss_sum = loss_sum + loss_score * len(batch)
+            loss_sum = loss_sum +loss_score
             loss = loss_sum/L
             epochs.set_description("Epoch (Loss=%g)" % round(loss, 5))
             
@@ -137,11 +144,18 @@ class Trainer(object):
         
         self.optimizer = torch.optim.Adam(self.model.parameters())
         #self.model.train()
-        epochs = trange(5, leave=True)
+        epochs = trange(self.epoch_num, leave=True)
 
         for epoch in epochs:
             self.train(epochs)
             
+    def calculate_loss(self,prediction, target):
+    
+        prediction = -math.log(prediction)
+        target = -math.log(target)
+        score = (prediction-target)**2
+        return score
+
     def score(self):
 
         print("\n\nModel evaluation.\n")
@@ -151,7 +165,13 @@ class Trainer(object):
         
         for data in tqdm(self.testing_graphs):
             data = self.transfer_to_torch(data)
+            target = data["target"]
             prediction = self.model(data)
             losses = losses + torch.nn.functional.mse_loss(data["target"], prediction[0])
+            #losses = losses + self.calculate_loss(data["target"], prediction[0])
 
+        losses = losses / len(self.testing_graphs)
+        print(len(self.testing_graphs))
         print("\nModel test error: " +str(round(losses.item(), 5))+".")
+
+    
