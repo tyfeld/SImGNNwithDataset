@@ -11,7 +11,7 @@ import random
 import math
 import numpy as np
 from tqdm import tqdm, trange
-from model import Att, NTN, FC, SimGNN
+from models import Att, NTN, FC, SimGNN
 
 
 # In[1]:
@@ -27,8 +27,8 @@ class Trainer(object):
         
         """载入数据并划分出 验证集"""
         print("\nEnumerating unique labels.\n")
-        self.training_graphs = pickle.load(open("./dataset/train_data.pickle",'rb'))
-        self.testing_graphs = pickle.load(open("./dataset/test_data.pickle",'rb'))
+        self.training_graphs = pickle.load(open("./dataset/train_data50.pickle",'rb'))
+        self.testing_graphs = pickle.load(open("./dataset/test_data50.pickle",'rb'))
         random.shuffle(self.training_graphs)
         L = len(self.training_graphs)
         div = int((1 - val) * L)
@@ -56,6 +56,7 @@ class Trainer(object):
 
     def save_record(self,fliename):
         pickle.dump(self.record,open(fliename,'wb'))
+        
         
     """将读入的文件转化成网络能接受的形式"""
     def transfer_to_torch(self, data):
@@ -148,6 +149,10 @@ class Trainer(object):
 
         for epoch in epochs:
             self.train(epochs)
+            if (epoch+1) % 5 == 0:
+                self.save_model("model"+str((epoch+1)/5)+".pkl")
+                self.save_record("recordfile"+str((epoch+1)/5))
+            
             
     def calculate_loss(self,prediction, target):
     
