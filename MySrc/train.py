@@ -12,28 +12,34 @@ import math
 import numpy as np
 from tqdm import tqdm, trange
 from models import Att, NTN, FC, SimGNN
-
+from extra import random_id
 
 # In[1]:
 
 
 class Trainer(object):
     
-    def prepare_for_train(self, batch_size = 128, epoch_num = 10, val = 0.2):
+    def prepare_for_train(self, random_id, hist, ifDense_GCN, feedback, batch_size = 128, epoch_num = 10):
+	    
         
         self.batch_size = batch_size
         self.epoch_num = epoch_num
         self.record = [] #用来记录(train_loss, val_loss)
-        
+        self.random_id = random_id
+        self.hist = hist
+        self.ifDense_GCN = ifDense_GCN
+        self.feedback = feedback
+
         """载入数据并划分出 验证集"""
         print("\nEnumerating unique labels.\n")
-        self.training_graphs = pickle.load(open("./dataset/train_data50.pickle",'rb'))
-        self.testing_graphs = pickle.load(open("./dataset/test_data50.pickle",'rb'))
-        random.shuffle(self.training_graphs)
-        L = len(self.training_graphs)
-        div = int((1 - val) * L)
-        self.val_graphs = self.training_graphs[div:L]
-        self.training_graphs = self.training_graphs[0:div]
+        self.training_graphs = pickle.load(open("./dataset/train_data60.pickle",'rb'))
+        self.testing_graphs = pickle.load(open("./dataset/test_data.pickle",'rb'))
+        self.val_graphs = pickle.load(open("./dataset/val_data.pickle",'rb'))
+        #random.shuffle(self.training_graphs)
+        #L = len(self.training_graphs)
+        #div = int((1 - val) * L)
+        #self.val_graphs = self.training_graphs[div:L]
+        #self.training_graphs = self.training_graphs[0:div]
         
         """求出一共的特征数量"""
         graph_pairs = self.training_graphs + self.testing_graphs
@@ -45,7 +51,7 @@ class Trainer(object):
         self.global_labels = {val:index  for index, val in enumerate(self.global_labels)}
         self.labels = len(self.global_labels)
         
-        self.model = SimGNN(self.labels)
+        self.model = SimGNN(self.labels, self.hist, self.ifDense_GCN, self.feedback)
     
     def load_model(self, file):
         self.testing_graphs = pickle.load(open("./dataset/test_data.pickle",'rb'))
@@ -62,18 +68,26 @@ class Trainer(object):
     def transfer_to_torch(self, data):
 
         new_data = dict()
-        edges_1 = data["graph_1"] + [[y, x] for x, y in data["graph_1"]]
-        edges_2 = data["graph_2"] + [[y, x] for x, y in data["graph_2"]]
+        tmp_edges_1 = data["graph_1"]
+        tmp_edges_2 = data["graph_2"]
+        tmp_labels_1 = data["labels_1"]
+        tmp_labels_2 = data["labels_2"]
+
+        if self.random_id is True:
+            tmp_edges_1, tmp_labels_1 = random_id(tmp_edges_1, tmp_labels_1)
+            tmp_edges_2, tmp_labels_2 = random_id(tmp_edges_2, tmp_labels_2)
+			
+        edges_1 = tmp_edges_1 + [[y, x] for x, y in tmp_edges_1]
+        edges_2 = tmp_edges_2 + [[y, x] for x, y in tmp_edges_2]
 
         edges_1 = torch.from_numpy(np.array(edges_1, dtype=np.int64).T).type(torch.long)
         edges_2 = torch.from_numpy(np.array(edges_2, dtype=np.int64).T).type(torch.long)
 
         features_1, features_2 = [], []
-
-        for n in data["labels_1"]:
+        for n in tmp_labels_1:
             features_1.append([1.0 if self.global_labels[n] == i else 0.0 for i in self.global_labels.values()])
 
-        for n in data["labels_2"]:
+        for n in tmp_labels_2:
             features_2.append([1.0 if self.global_labels[n] == i else 0.0 for i in self.global_labels.values()])
             
         features_1 = torch.FloatTensor(np.array(features_1))
@@ -150,8 +164,8 @@ class Trainer(object):
         for epoch in epochs:
             self.train(epochs)
             if (epoch+1) % 5 == 0:
-                self.save_model("model"+str((epoch+1)/5)+".pkl")
-                self.save_record("recordfile"+str((epoch+1)/5))
+                self.save_model("model_b"+str((epoch+1)/5)+".pkl")
+                self.save_record("recordfile_b"+str((epoch+1)/5))
             
             
     def calculate_loss(self,prediction, target):

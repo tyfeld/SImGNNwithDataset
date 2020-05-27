@@ -4,6 +4,7 @@
 import torch
 import torch.nn as nn
 from torch_geometric.nn import GCNConv
+from extra import Conv_module, Dense_GCN, feedback_Att
 
 """封装 预设权重 和 激活函数的Linear"""
 class Dense(nn.Module):
@@ -90,21 +91,35 @@ class NTN(nn.Module):
 """ SimGNN: A Neural Network Approach to Fast Graph Similarity Computation"""
 class SimGNN(nn.Module):
     
-    def __init__(self, number_of_labels, hist = True):
+    def __init__(self, number_of_labels, hist, ifDense_GCN, feedback):
         
         super(SimGNN, self).__init__()
         self.labels = number_of_labels
-        
         self.hist = hist
+        self.ifDense_GCN = ifDense_GCN
+        self.feedback = feedback
+        
         self.input_size_of_fc = 32 #全连接层的输入维度
-        if hist is not True:
+        if (hist=="none"):
             self.input_size_of_fc = 16
-            
-        self.Att = Att()
+        
+        if self.feedback is True:
+            self.Att = feedback_Att()
+        else:
+            self.Att = Att()
+		
         self.NTN = NTN()
-        self.conv_1 = GCNConv(self.labels, 64)
-        self.conv_2 = GCNConv(64, 32)
-        self.conv_3 = GCNConv(32, 16)
+        
+        if (self.ifDense_GCN == True):
+            self.D_G = Dense_GCN(self.labels)
+        else:
+            self.conv_1 = GCNConv(self.labels, 64)
+            self.conv_2 = GCNConv(64, 32)
+            self.conv_3 = GCNConv(32, 16)
+        
+        if (self.hist == "conv"):
+            self.C = Conv_module()
+		
         self.fc = FC(self.input_size_of_fc)
     
     """三次图卷积"""
@@ -125,13 +140,18 @@ class SimGNN(nn.Module):
     """传入的第二个是转置后的特征矩阵"""
     def calculate_hist(self, embedding_1, embedding_2):
         
-        s = torch.mm(embedding_1, embedding_2).detach() #使用detach,截断反向传播的梯度流
-        s = s.view(-1, 1)
-        hist = torch.histc(s, bins = 16)
-        hist = hist/torch.sum(hist) #归一化
-        hist = hist.view(1, -1)
+        if(self.hist == "hist"):
+        	s = torch.mm(embedding_1, embedding_2).detach() #使用detach,截断反向传播的梯度流
+        	s = s.view(-1, 1)
+        	hist = torch.histc(s, bins = 16)
+        	hist = hist/torch.sum(hist) #归一化
+        	hist = hist.view(1, -1)
 
-        return hist
+        	return hist
+			
+        s = torch.mm(embedding_1, embedding_2)
+        ret = self.C(s)
+        return ret
     
     def forward(self, data):
         
@@ -141,14 +161,19 @@ class SimGNN(nn.Module):
         features_2 = data["features_2"]
         
         """通过图卷积得到 每个节点的特征向量"""
-        embedding_1 = self.extract_features(edge_1, features_1)
-        embedding_2 = self.extract_features(edge_2, features_2)
+        if self.ifDense_GCN is True:
+        	embedding_1 = self.D_G(edge_1, features_1)
+        	embedding_2 = self.D_G(edge_2, features_2)
+        else:
+        	embedding_1 = self.extract_features(edge_1, features_1)
+        	embedding_2 = self.extract_features(edge_2, features_2)
+		
         graph_embedding_1 = self.Att(embedding_1)
         graph_embedding_2 = self.Att(embedding_2)
         
         scores = torch.t(self.NTN(graph_embedding_1, graph_embedding_2))
         
-        if self.hist is True:
+        if (self.hist != "none"):
             h = self.calculate_hist(embedding_1, torch.t(embedding_2))
             scores = torch.cat((scores, h), dim=1).view(1, -1)
         
