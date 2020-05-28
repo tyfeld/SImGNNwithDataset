@@ -143,6 +143,7 @@ class SimGNN(nn.Module):
         if(self.hist == "hist"):
         	s = torch.mm(embedding_1, embedding_2).detach() #使用detach,截断反向传播的梯度流
         	s = s.view(-1, 1)
+                s = torch.sigmoid(s)
         	hist = torch.histc(s, bins = 16)
         	hist = hist/torch.sum(hist) #归一化
         	hist = hist.view(1, -1)
@@ -150,6 +151,7 @@ class SimGNN(nn.Module):
         	return hist
 			
         s = torch.mm(embedding_1, embedding_2)
+	s = torch.sigmoid(s)
         ret = self.C(s)
         return ret
     
