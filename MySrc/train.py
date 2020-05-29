@@ -187,15 +187,15 @@ class Trainer(object):
         #L = len(self.training_graphs)
         #L = int(0.4* L)
         #self.score_graphs = self.training_graphs[0:L]
-        for data in tqdm(self.val_graphs):
+        for data in tqdm(self.testing_graphs):
             data = self.transfer_to_torch(data)
             target = data["target"]
             prediction = self.model(data)
             losses = losses + torch.nn.functional.mse_loss(data["target"], prediction[0])
             #losses = losses + self.calculate_loss(data["target"], prediction[0])
 
-        losses = losses / len(self.val_graphs)
-        print(len(self.val_graphs))
+        losses = losses / len(self.testing_graphs)
+        print(len(self.testing_graphs))
         print("\nModel test error: " +str(round(losses.item(), 5))+".")
 
     
