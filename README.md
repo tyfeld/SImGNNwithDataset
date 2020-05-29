@@ -10,21 +10,16 @@ To run  :
 ```
 python MySrc/main.py 
 ```
-model1: model_a 3.0
+型号1：model_a
  
+model2: model_b
 
-model2: model_b4.0
-
-model3: model_c4.0
-
+model3: model_c
 
 model4: model_d
 
-
-model5: model_orinew2.0
-
+model5: model_orinew
 
 model6: model_6
-
 
 model7: model_e
