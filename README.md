@@ -10,7 +10,7 @@ To run  :
 ```
 python MySrc/main.py 
 ```
-model1：model_a
+model1: model_a
  
 model2: model_b
 
