@@ -141,17 +141,16 @@ class SimGNN(nn.Module):
     def calculate_hist(self, embedding_1, embedding_2):
         
         if(self.hist == "hist"):
-        	s = torch.mm(embedding_1, embedding_2).detach() #使用detach,截断反向传播的梯度流
-        	s = s.view(-1, 1)
-                s = torch.sigmoid(s)
-        	hist = torch.histc(s, bins = 16)
-        	hist = hist/torch.sum(hist) #归一化
-        	hist = hist.view(1, -1)
-
-        	return hist
+            s = torch.mm(embedding_1, embedding_2).detach() #使用detach,截断反向传播的梯度流
+            s = s.view(-1, 1)
+            s = torch.sigmoid(s)
+            hist = torch.histc(s, bins = 16)
+            hist = hist/torch.sum(hist) #归一化
+            hist = hist.view(1, -1)
+            return hist
 			
         s = torch.mm(embedding_1, embedding_2)
-	s = torch.sigmoid(s)
+        s = torch.sigmoid(s)
         ret = self.C(s)
         return ret
     
@@ -167,8 +166,8 @@ class SimGNN(nn.Module):
         	embedding_1 = self.D_G(edge_1, features_1)
         	embedding_2 = self.D_G(edge_2, features_2)
         else:
-        	embedding_1 = self.extract_features(edge_1, features_1)
-        	embedding_2 = self.extract_features(edge_2, features_2)
+            embedding_1 = self.extract_features(edge_1, features_1)
+            embedding_2 = self.extract_features(edge_2, features_2)
 		
         graph_embedding_1 = self.Att(embedding_1)
         graph_embedding_2 = self.Att(embedding_2)

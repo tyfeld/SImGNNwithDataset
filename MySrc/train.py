@@ -14,7 +14,6 @@ from tqdm import tqdm, trange
 from models import Att, NTN, FC, SimGNN
 from extra import random_id
 
-# In[1]:
 
 
 class Trainer(object):
@@ -56,6 +55,7 @@ class Trainer(object):
     def load_model(self, file):
         self.testing_graphs = pickle.load(open("./dataset/test_data.pickle",'rb'))
         self.model = torch.load(file)
+        print(self.hist)
         
     def save_model(self, file):
         torch.save(self.model, file)
@@ -164,8 +164,8 @@ class Trainer(object):
         for epoch in epochs:
             self.train(epochs)
             if (epoch+1) % 5 == 0:
-                self.save_model("model_b"+str((epoch+1)/5)+".pkl")
-                self.save_record("recordfile_b"+str((epoch+1)/5))
+                self.save_model("model_c"+str((epoch+1)/5)+".pkl")
+                self.save_record("recordfile_c"+str((epoch+1)/5))
             
             
     def calculate_loss(self,prediction, target):
@@ -182,15 +182,20 @@ class Trainer(object):
         self.model.eval()
         losses = 0
         
-        for data in tqdm(self.testing_graphs):
+        #for data in tqdm(self.testing_graphs):
+        #random.shuffle(self.training_graphs)
+        #L = len(self.training_graphs)
+        #L = int(0.4* L)
+        #self.score_graphs = self.training_graphs[0:L]
+        for data in tqdm(self.val_graphs):
             data = self.transfer_to_torch(data)
             target = data["target"]
             prediction = self.model(data)
             losses = losses + torch.nn.functional.mse_loss(data["target"], prediction[0])
             #losses = losses + self.calculate_loss(data["target"], prediction[0])
 
-        losses = losses / len(self.testing_graphs)
-        print(len(self.testing_graphs))
+        losses = losses / len(self.val_graphs)
+        print(len(self.val_graphs))
         print("\nModel test error: " +str(round(losses.item(), 5))+".")
 
     
